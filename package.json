@@ -1,0 +1,30 @@
+{
+  "name": "qa-service",
+  "version": "1.0.0",
+  "description": "QA service for RepoAPI ",
+  "main": "index.js",
+  "engines": {
+    "node": "22.11.0",
+    "npm": "10.9.0"
+  },
+
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node  --watch --env-file=.env index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/node-it-alls/qa.git"
+  },
+  "author": "Skyla Reiner",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/node-it-alls/qa/issues"
+  },
+  "homepage": "https://github.com/node-it-alls/qa#readme",
+  "dependencies": {
+    "express": "^4.21.1",
+    "mongoose": "^8.7.3",
+    "morgan": "^1.10.0"
+  }
+}
