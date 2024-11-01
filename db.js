@@ -152,68 +152,101 @@ const seedQuestions = () => {
   });
 }
 
+
+const batchSize = 100;
+let batch = [];
+let count = 0;
+
+
+const insertBatch = (batch) => {
+  count++;
+  Answer.insertMany(batch)
+    .then(() =>
+      console.log(count)
+    )
+    .catch((err) => console.error(err), "error inserting data");
+};
+
 const seedAnswers = () => {
-  fs.createReadStream(path.join(__dirname, './data/answers.csv'))
-    .pipe(csv.parse({ headers: true }))
-    .on('error', error => console.error('CSV Parsing Error:', error))
-    .on('data', async (data) => {
-      try {
-        const question = await Question.findOne({ id: data.question_id });
-        if (question) {
-          const ans = await Answer.findOneAndUpdate({ id: data.id }, {
-            id: data.id,
-            body: data.body,
-            date: data.date_written,
-            answerer_name: data.answerer_name,
-            photos: [],
-            question: question._id,
-            helpfulness: data.helpful,
-          }, { upsert: true, new: true });
-          if (ans) {
-            console.log(ans.id)
+  return new Promise((resolve, reject) => {
+    fs.createReadStream(path.join(__dirname, './data/answers.csv'))
+      .pipe(csv.parse({ headers: true }))
+      .on('error', error => {
+        console.error('CSV Parsing Error:', error)
+        reject(error);
+      })
+      .on('data', async (data) => {
+        try {
+          const question = await Question.findOne({ id: data.question_id });
+          if (question) {
+            const ans = {
+              id: data.id,
+              body: data.body,
+              date: data.date_written,
+              answerer_name: data.answerer_name,
+              photos: [],
+              question: question._id,
+              helpfulness: data.helpful,
+            }
+            batch.push(ans);
+            if (batch.length >= batchSize) {
+              insertBatch(batch);
+              batch = [];
+            }
             await Question.updateOne({ _id: question._id }, { $push: { answers: ans._id } });
           }
+        } catch (err) {
+          console.error('Error in processing data row:', err);
         }
-      } catch (err) {
-        console.error('Error in processing data row:', err);
-      }
-    })
-    .on('end', () => {
-      console.log('success @ seedAnswers');
-    });
+      })
+      .on('end', () => {
+        if (batch.length > 0) {
+          insertBatch(batch);
+        }
+        console.log('success @ seedAnswers');
+        resolve();
+      });
+  });
 };
 
 const seedPhotos = () => {
-  fs.createReadStream(path.join(__dirname, `./data/answers_photos.csv`))
-    .pipe(csv.parse({ headers: true }))
-    .on('error', error => console.error(error))
-    .on('data', async (data) => {
-      try {
-        await Answer.updateOne({ id: data.answer_id }, { $push: { photos: { url: data.url } } });
-      } catch (err) {
-        console.log('err @ seedPhotos', err)
-      }
-    })
-    .on('end', () => {
-      console.log('success @ seedPhotos')
-    });
+  return new Promise((resolve, reject) => {
+    fs.createReadStream(path.join(__dirname, `./data/answers_photos.csv`))
+      .pipe(csv.parse({ headers: true }))
+      .on('error', error => {
+        console.error(error)
+        reject(error);
+      })
+      .on('data', async (data) => {
+        try {
+          console.log(data.answer_id)
+          await Answer.updateOne({ id: data.answer_id }, { $push: { photos: { url: data.url } } });
+        } catch (err) {
+          console.log('err @ seedPhotos', err)
+        }
+      })
+      .on('end', () => {
+        console.log('success @ seedPhotos')
+        resolve();
+      });
+  });
 }
 
-
-// async function seedDb() {
-//   const test = await seedQuestions();
-//   if (test) {
-//     console.log('success @ seedDb')
-//   }
-
-// }
+const seedDb = async () => {
+  try {
+    await seedQuestions();
+    await seedAnswers();
+    await seedPhotos();
+  } catch (err) {
+    console.log('Error in seedDb:', err);
+  }
+}
 
 // seedDb();
 
 // seedQuestions();
 // seedAnswers();
 // seedPhotos();
-
 
 module.exports.Answer = Answer;
 module.exports.Question = Question;
