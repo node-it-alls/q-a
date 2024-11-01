@@ -183,7 +183,7 @@ const seedAnswers = () => {
     });
 };
 
-function seedPhotos() {
+const seedPhotos = () => {
   fs.createReadStream(path.join(__dirname, `./data/answers_photos.csv`))
     .pipe(csv.parse({ headers: true }))
     .on('error', error => console.error(error))
