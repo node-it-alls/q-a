@@ -55,16 +55,18 @@ const answerSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    question_id: Number,
     question: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Question",
-      required: true,
+      // required: true,
     },
   },
 );
 
 const Answer = mongoose.model("Answer", answerSchema);
 
+// ignore these they are just template testing functions
 const testQuestion = new Question({
   question_body: "This is a test question",
   question_date: "2021-09-01",
@@ -111,7 +113,6 @@ async function test() {
   }
 }
 
-
 const convertDate = (timestamp) => {
   const parsedTimestamp = parseInt(timestamp);
   if (isNaN(parsedTimestamp)) {
@@ -123,27 +124,32 @@ const convertDate = (timestamp) => {
 
 
 const seedQuestions = () => {
-  fs.createReadStream(path.join(__dirname, `./data/questions.csv`))
-    .pipe(csv.parse({ headers: true }))
-    .on('error', error => console.error(error))
-    .on('data', async (data) => {
-      console.log(data)
-      try {
-        await Question.findOneAndUpdate({ id: data.id }, {
-          id: data.id,
-          question_body: data.body,
-          question_date: data.date_written,
-          asker_name: data.asker_name,
-          question_helpfulness: data.helpfulness,
-        }, { upsert: true }); // change this to create on final seed
-      } catch (err) {
-        console.log(err)
-      }
-    })
-    .on('end', () => {
-      console.log('success @ seedQuestions')
-      seedAnswers();
-    });
+  return new Promise((resolve, reject) => {
+    fs.createReadStream(path.join(__dirname, `./data/questions.csv`))
+      .pipe(csv.parse({ headers: true }))
+      .on('error', error => {
+        console.error(error)
+        reject(error);
+      })
+      .on('data', async (data) => {
+        console.log(data.id)
+        try {
+          await Question.findOneAndUpdate({ id: data.id }, {
+            id: data.id,
+            question_body: data.body,
+            question_date: data.date_written,
+            asker_name: data.asker_name,
+            question_helpfulness: data.helpfulness,
+          }, { upsert: true }); // change this to create on final seed
+        } catch (err) {
+          console.log(err)
+        }
+      })
+      .on('end', () => {
+        console.log('success @ seedQuestions')
+        resolve();
+      });
+  });
 }
 
 const seedAnswers = () => {
@@ -155,16 +161,16 @@ const seedAnswers = () => {
         const question = await Question.findOne({ id: data.question_id });
         if (question) {
           const ans = await Answer.findOneAndUpdate({ id: data.id }, {
-            id: question.id,
+            id: data.id,
             body: data.body,
             date: data.date_written,
             answerer_name: data.answerer_name,
             photos: [],
             question: question._id,
             helpfulness: data.helpful,
-
-          }, { upsert: true });
+          }, { upsert: true, new: true });
           if (ans) {
+            console.log(ans.id)
             await Question.updateOne({ _id: question._id }, { $push: { answers: ans._id } });
           }
         }
@@ -177,13 +183,13 @@ const seedAnswers = () => {
     });
 };
 
-const seedPhotos = () => {
+function seedPhotos() {
   fs.createReadStream(path.join(__dirname, `./data/answers_photos.csv`))
     .pipe(csv.parse({ headers: true }))
     .on('error', error => console.error(error))
     .on('data', async (data) => {
       try {
-        const res = await Answer.updateOne({ id: data.answer_id }, { $push: { photos: { $each: [{ url: data.url }] } } });
+        await Answer.updateOne({ id: data.answer_id }, { $push: { photos: { url: data.url } } });
       } catch (err) {
         console.log('err @ seedPhotos', err)
       }
@@ -193,7 +199,21 @@ const seedPhotos = () => {
     });
 }
 
-seedQuestions();
+
+// async function seedDb() {
+//   const test = await seedQuestions();
+//   if (test) {
+//     console.log('success @ seedDb')
+//   }
+
+// }
+
+// seedDb();
+
+// seedQuestions();
 // seedAnswers();
+// seedPhotos();
+
+
 module.exports.Answer = Answer;
 module.exports.Question = Question;
