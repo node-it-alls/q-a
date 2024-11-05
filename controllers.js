@@ -27,7 +27,7 @@ exports.getQuestions = (req, res) => {
       return results;
     })
     .then((data) => {
-      res.send(data);
+      res.status(200).send(data);
     })
     .catch((err) => console.log(err));
 };

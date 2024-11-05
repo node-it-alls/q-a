@@ -1,0 +1,8 @@
+{
+  "yaml.schemas": {
+    "https://www.artillery.io/schema.json": [
+      "file:///home/sysreiner/hr_capstones/qa-service/artillery.yml",
+      "file:///home/sysreiner/hr_capstones/qa-service/artillery/artillery.yml"
+    ]
+  }
+}
