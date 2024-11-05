@@ -20,6 +20,10 @@ app.post("/qa/questions", (req, res) => {
   controllers.createQuestion(req, res);
 });
 
+app.get("/qa/questions/:question_id/answers", (req, res) => {
+  controllers.getAnswers(req, res);
+});
+
 app.post("/qa/questions/:question_id/answers", (req, res) => {
   controllers.createAnswer(req, res);
 });

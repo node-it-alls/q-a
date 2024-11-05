@@ -1,8 +1,10 @@
 config:
   target: 'http://localhost:3003'  # URL of the target system
   phases:
-    - duration: 60
-      arrivalRate: 10
+    - duration: 30
+      arrivalRate: 1
+  http:
+    timeout: 20
   plugins:
     fake-data: {}
     ensure: {}
@@ -25,7 +27,7 @@ scenarios:
           name: "Get questions"
           url: "/qa/questions"
           qs:
-            product_id: "{{ $randomNumber(1, 1000) }}"
+            product_id: "{{ 1 }}"
             page: "{{ $randomNumber(1, 10) }}"
             count: "{{ $randomNumber(1, 20) }}"
           expect:
@@ -33,7 +35,7 @@ scenarios:
             - contentType: json
       - get:
           name: "Get answers"
-          url: "/qa/questions/{{ $randomNumber(1, 1000) }}/answers"
+          url: "/qa/questions/{{ $randomNumber(6191374, 6879304) }}/answers"
 
   - name: "Writes"
     flow:
@@ -44,7 +46,39 @@ scenarios:
             body: '{{ $randCatchPhrase() }}'
             name: '{{ $randFullName() }}'
             email: '{{ $randEmail() }}'
-            photos: "[{url: '{{ $randUrl() }}'}, {url: '{{ $randUrl() }}'}]"
-            product_id: '{{ $randomNumber(1, 1000) }}'
+            product_id: '{{ $randomNumber(3167733, 3519703) }}'
           expect:
             - statusCode: 201
+     - post:
+          name: "Create answer"
+          url: "/qa/questions/{{ $randomNumber(6191374, 6879304) }}/answers"
+          qs:
+            body: '{{ $randCatchPhrase() }}'
+            name: '{{ $randFullName() }}'
+            email: '{{ $randEmail() }}'
+            photos: ["http://example.com/image1.jpg", "http://example.com/image2.jpg", "http://example.com/image1.jpg"]
+            product_id: '{{ $randomNumber(3167733, 3519703) }}'
+          expect:
+            - statusCode: 201
+  - name: "Puts"
+    flow:
+      - put:
+          name: "Mark question helpful"
+          url: "/qa/questions/{{ $randomNumber(3167733, 3519703) }}/helpful"
+          expect:
+            - statusCode: 204
+      - put:
+          name: "Report question"
+          url: "/qa/questions/{{ $randomNumber(3167733, 3519703) }}/report"
+          expect:
+            - statusCode: 204
+      - put:
+          name: "Mark answer helpful"
+          url: "/qa/answers/{{ $randomNumber(6191374, 6879304) }}/helpful"
+          expect:
+            - statusCode: 204
+      - put:
+          name: "Report answer"
+          url: "/qa/answers/{{ $randomNumber(6191374, 6879304) }}/report"
+          expect:
+            - statusCode: 204

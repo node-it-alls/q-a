@@ -12,10 +12,10 @@ exports.getQuestions = (req, res) => {
       const results = Promise.all(
         doc.map(async (question) => {
           const answers = await Answer.find({ question_id: question.id });
-          const mapped = {};
+          const mappedAnswers = {};
           if (answers) {
             answers.forEach((answer) => {
-              mapped[String(answer.id)] = {
+              mappedAnswers[String(answer.id)] = {
                 ...answer._doc,
                 answer_id: answer.id,
               };
@@ -29,7 +29,10 @@ exports.getQuestions = (req, res) => {
     .then((data) => {
       res.status(200).send(data);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      res.sendStatus(400);
+      console.log(err);
+    });
 };
 
 exports.createQuestion = (req, res) => {
@@ -52,6 +55,7 @@ exports.createQuestion = (req, res) => {
         res.status(201).send(doc);
       })
       .catch((err) => {
+        res.sendStatus(400);
         console.log(err);
       });
   });
@@ -61,6 +65,28 @@ exports.reportQuestion = (req, res) => {
   Question.findOneAndUpdate({ id: req.params.question_id }, { reported: true })
     .then(() => {
       res.sendStatus(204);
+    })
+    .catch((err) => {
+      res.sendStatus(400);
+      console.log(err);
+    });
+};
+
+exports.getAnswers = (req, res) => {
+  const page = req.query.page || 1;
+  const count = req.query.count || 5;
+  const skip = (page - 1) * count;
+  Answer.find({ question_id: req.params.question_id, reported: false })
+    .skip(skip)
+    .limit(count)
+    .exec()
+    .then((doc) => {
+      res.status(200).send({
+        question: req.params.question_id,
+        page,
+        count,
+        results: doc,
+      });
     })
     .catch((err) => {
       console.log(err);
@@ -73,11 +99,13 @@ exports.createAnswer = (req, res) => {
     res.sendStatus(400);
     return;
   }
+  console.log(req.query.photos);
+
   Answer.countDocuments({}).then((count) => {
     const newAnswer = new Answer({
       body,
       answerer_name: name,
-      photos: JSON.parse(req.query.photos),
+      photos: JSON.parse(req.query.photos).map((photo) => ({ url: photo })),
       id: count + 1,
       question_id: req.params.question_id,
     });
