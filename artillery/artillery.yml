@@ -1,0 +1,50 @@
+config:
+  target: 'http://localhost:3003'  # URL of the target system
+  phases:
+    - duration: 60
+      arrivalRate: 10
+  plugins:
+    fake-data: {}
+    ensure: {}
+    apdex: {}
+    expect: {}
+    metrics-by-endpoint: {}
+  apdex:
+    threshold: 100
+  ensure:
+    thresholds:
+      - http.response_time.p99: 75
+      - http.response_time.p95: 100
+  processor: "./artillery-functions.js"
+
+
+scenarios:
+  - name: "Reads"
+    flow:
+      - get:
+          name: "Get questions"
+          url: "/qa/questions"
+          qs:
+            product_id: "{{ $randomNumber(1, 1000) }}"
+            page: "{{ $randomNumber(1, 10) }}"
+            count: "{{ $randomNumber(1, 20) }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+      - get:
+          name: "Get answers"
+          url: "/qa/questions/{{ $randomNumber(1, 1000) }}/answers"
+
+  - name: "Writes"
+    flow:
+     - post:
+          name: "Create question"
+          url: "/qa/questions"
+          qs:
+            body: '{{ $randCatchPhrase() }}'
+            name: '{{ $randFullName() }}'
+            email: '{{ $randEmail() }}'
+            photos: "[{url: '{{ $randUrl() }}'}, {url: '{{ $randUrl() }}'}]"
+            product_id: '{{ $randomNumber(1, 1000) }}'
+          expect:
+            - statusCode: 201
