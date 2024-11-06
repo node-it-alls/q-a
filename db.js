@@ -188,7 +188,6 @@ const seedPhotos = () => {
 
 // seedQuestions();
 // seedAnswers();
-// createQuestionAnswerConnection();
 // seedPhotos();
 
 module.exports.Answer = Answer;
