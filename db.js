@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const { Schema } = mongoose;
 const csv = require("fast-csv");
 const fs = require("fs");
 const path = require("path");
@@ -135,7 +134,6 @@ const seedAnswers = () => {
     .on("data", async (data) => {
       try {
         const question = await Question.findOne({ id: data.question_id });
-
         if (question) {
           const ans = {
             id: data.id,
@@ -175,8 +173,6 @@ const seedPhotos = () => {
     })
     .on("data", async (data) => {
       try {
-        console.log(data.answer_id);
-
         await Answer.updateOne(
           { id: data.answer_id },
           { $push: { photos: { url: data.url } } }

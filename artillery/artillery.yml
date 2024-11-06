@@ -56,7 +56,7 @@ scenarios:
             body: '{{ $randCatchPhrase() }}'
             name: '{{ $randFullName() }}'
             email: '{{ $randEmail() }}'
-            photos: ["http://example.com/image1.jpg", "http://example.com/image2.jpg", "http://example.com/image1.jpg"]
+            photos: '["http://example.com/image1.jpg", "http://example.com/image2.jpg", "http://example.com/image1.jpg"]'
             product_id: '{{ $randomNumber(3167733, 3519703) }}'
           expect:
             - statusCode: 201
