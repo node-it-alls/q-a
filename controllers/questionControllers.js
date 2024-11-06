@@ -1,4 +1,4 @@
-const { Answer, Question } = require("./db.js");
+const { Answer, Question } = require("../db.js");
 
 exports.getQuestions = (req, res) => {
   const page = req.query.page || 1;
@@ -12,16 +12,19 @@ exports.getQuestions = (req, res) => {
       const results = Promise.all(
         doc.map(async (question) => {
           const answers = await Answer.find({ question_id: question.id });
-          const mapped = {};
+          const mappedAnswers = {};
           if (answers) {
             answers.forEach((answer) => {
-              mapped[String(answer.id)] = {
+              const result = {
                 ...answer._doc,
                 answer_id: answer.id,
               };
+              delete result.reported;
+              mappedAnswers[String(answer.id)] = result;
             });
           }
-          return { ...question._doc, answers: mapped };
+          delete question._doc.reported;
+          return { ...question._doc, answers: mappedAnswers };
         })
       );
       return results;
@@ -29,7 +32,10 @@ exports.getQuestions = (req, res) => {
     .then((data) => {
       res.status(200).send(data);
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      res.sendStatus(400);
+      console.log(err);
+    });
 };
 
 exports.createQuestion = (req, res) => {
@@ -52,6 +58,7 @@ exports.createQuestion = (req, res) => {
         res.status(201).send(doc);
       })
       .catch((err) => {
+        res.sendStatus(400);
         console.log(err);
       });
   });
@@ -63,62 +70,15 @@ exports.reportQuestion = (req, res) => {
       res.sendStatus(204);
     })
     .catch((err) => {
+      res.sendStatus(400);
       console.log(err);
     });
-};
-
-exports.createAnswer = (req, res) => {
-  const { body, name, email, photos } = req.query;
-  if (!body || !name || !email || !photos) {
-    res.sendStatus(400);
-    return;
-  }
-  Answer.countDocuments({}).then((count) => {
-    const newAnswer = new Answer({
-      body,
-      answerer_name: name,
-      photos: JSON.parse(req.query.photos),
-      id: count + 1,
-      question_id: req.params.question_id,
-    });
-    newAnswer
-      .save()
-      .then(() => {
-        res.sendStatus(201);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  });
 };
 
 exports.updateQuestionHelpful = (req, res) => {
   Question.findOneAndUpdate(
     { id: req.params.question_id },
     { $inc: { question_helpfulness: 1 } }
-  )
-    .then(() => {
-      res.sendStatus(204);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-};
-
-exports.reportAnswer = (req, res) => {
-  Answer.findOneAndUpdate({ id: req.params.answer_id }, { reported: true })
-    .then(() => {
-      res.sendStatus(204);
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-};
-
-exports.updateAnswerHelpful = (req, res) => {
-  Answer.findOneAndUpdate(
-    { id: req.params.answer_id },
-    { $inc: { helpfulness: 1 } }
   )
     .then(() => {
       res.sendStatus(204);
