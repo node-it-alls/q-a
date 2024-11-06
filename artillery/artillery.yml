@@ -1,8 +1,14 @@
 config:
   target: 'http://localhost:3003'  # URL of the target system
   phases:
-    - duration: 30
+    - duration: 20
       arrivalRate: 1
+    - duration: 20
+      arrivalRate: 10
+    - duration: 20
+      arrivalRate: 100
+    - duration: 20
+      arrivalRate: 1000
   http:
     timeout: 20
   plugins:
@@ -15,8 +21,8 @@ config:
     threshold: 100
   ensure:
     thresholds:
-      - http.response_time.p99: 75
-      - http.response_time.p95: 100
+      - http.response_time.p99: 100
+      - http.response_time.p95: 75
   processor: "./artillery-functions.js"
 
 
